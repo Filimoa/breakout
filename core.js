@@ -1,45 +1,15 @@
+import { Square } from './gameObjects.js'
+
 let canvas;
 let context;
 
-let rectX = 0;
-let rectY = 0;
-
 let secondsPassed = 0;
-let oldTimeStamp = 0;
+let timestamp = 0;
 let gameObjects;
 
 window.onload = init;
 
-class GameObject {
-    constructor(context, x, y, vx, vy,) {
-        this.context = context
-        this.x = x
-        this.y = y
-        this.vx = vx
-        this.vy = vy
 
-        this.isColliding = false
-    }
-}
-
-class Square extends GameObject {
-    constructor(context, x, y, vx, vy,) {
-        super(context, x, y, vx, vy,)
-        this.width = 50;
-        this.height = 50;
-    }
-
-    draw() {
-        this.context.fillStyle = this.isColliding ? '#ff8080' : '#0099b0';
-        this.context.fillRect(this.x, this.y, this.width, this.height)
-    }
-
-    update(secondsPassed) {
-        this.x += this.vx * secondsPassed
-        this.y += this.vy * secondsPassed
-    }
-
-}
 
 function init() {
     canvas = document.getElementById('canvas');
@@ -53,13 +23,12 @@ function clearCanvas() {
 }
 
 function getSecondsPassed(timeStamp) {
-    secondsPassed = (timeStamp - oldTimeStamp) / 1000;
-    oldTimeStamp = timeStamp;
-    return Math.min(secondsPassed, 0.1);
+    secondsPassed = (Date.now() - timestamp) / 1000;
+    return timeStamp, Math.min(secondsPassed, 0.1);
 }
 
-function gameLoop(timeStamp) {
-    secondsPassed = getSecondsPassed(timeStamp)
+function gameLoop() {
+    timestamp, secondsPassed = getSecondsPassed(timestamp)
 
     detectCollisions()
 
@@ -79,18 +48,16 @@ function gameLoop(timeStamp) {
 
 function createWorld() {
     gameObjects = [
-        new Square(context, 250, 50, 0, 50),
-        new Square(context, 250, 300, 0, -50),
-        new Square(context, 150, 0, 50, 50),
-        new Square(context, 250, 150, 50, 50),
-        new Square(context, 350, 75, -50, 50),
-        new Square(context, 300, 300, 50, -50)
+        new Square(context, 250, 50, 0, 5),
+        new Square(context, 250, 300, 0, -5),
+        new Square(context, 150, 0, 5, 5),
+        new Square(context, 250, 150, 5, 5),
+        new Square(context, 350, 75, -5, 5),
+        new Square(context, 300, 300, 5, -5)
     ];
 }
 
 
-// implement collision detection
-// create a function in game objects that accesses the global variable
 
 function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2,) {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2) {
