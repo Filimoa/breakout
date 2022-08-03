@@ -1,94 +1,120 @@
-import { Square } from './gameObjects.js'
+import { Paddle, Square, getCollisionVector } from './gameObjects.js'
+import { clearCanvas } from "./utils.js"
 
 let canvas;
 let context;
 
+const canvasWidth = 750;
+const canvasHeight = 400;
+const LEFT_KEY = "37"
+const RIGHT_KEY = "39"
+
 let secondsPassed = 0;
 let timestamp = 0;
 let gameObjects;
+let paddle;
 
 window.onload = init;
-
-
 
 function init() {
     canvas = document.getElementById('canvas');
     context = canvas.getContext('2d');
 
     window.requestAnimationFrame(gameLoop);
+
+    document.onkeydown = checkKey;
 }
 
-function clearCanvas() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-}
 
-function getSecondsPassed(timeStamp) {
-    secondsPassed = (Date.now() - timestamp) / 1000;
-    return timeStamp, Math.min(secondsPassed, 0.1);
+function getSecondsPassed(pastTimestamp) {
+    secondsPassed = (Date.now() - pastTimestamp) / 1000;
+    return Date.now(), Math.min(secondsPassed, 0.1);
 }
 
 function gameLoop() {
     timestamp, secondsPassed = getSecondsPassed(timestamp)
 
-    detectCollisions()
+    gameObjects = detectCollisions(gameObjects)
 
     for (let i = 0; i < gameObjects.length; i++) {
-        gameObjects[i].update(secondsPassed);
+        gameObjects[i].advance(secondsPassed);
     }
 
-    clearCanvas()
+    clearCanvas(canvas, context)
 
     for (let i = 0; i < gameObjects.length; i++) {
         gameObjects[i].draw();
     }
 
+    paddle.draw()
+
     window.requestAnimationFrame(gameLoop);
 }
 
 
-function createWorld() {
-    gameObjects = [
-        new Square(context, 250, 50, 0, 5),
-        new Square(context, 250, 300, 0, -5),
-        new Square(context, 150, 0, 5, 5),
-        new Square(context, 250, 150, 5, 5),
-        new Square(context, 350, 75, -5, 5),
-        new Square(context, 300, 300, 5, -5)
-    ];
-}
 
-
-
-function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2,) {
-    if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2) {
-        return false;
-    }
-    return true;
-}
-
-function detectCollisions() {
+function detectCollisions(gameObjects) {
     let obj1;
     let obj2;
 
-    // Reset collision state of all objects
-    for (let i = 0; i < gameObjects.length; i++) {
-        gameObjects[i].isColliding = false;
-    }
 
-    // Start checking for collisions
     for (let i = 0; i < gameObjects.length; i++) {
         obj1 = gameObjects[i];
         for (let j = i + 1; j < gameObjects.length; j++) {
-            obj2 = gameObjects[j];
+            obj2 = gameObjects[j]
+            if (obj1.intersects(gameObjects[j])) {
+                let v = getCollisionVector(obj1.x, obj1.y, obj2.x, obj2.y)
+                obj1.x = v.x
+                obj1.y = v.y
 
-            // Compare object1 with object2
-            if (rectIntersect(obj1.x, obj1.y, obj1.width, obj1.height, obj2.x, obj2.y, obj2.width, obj2.height)) {
-                obj1.isColliding = true;
-                obj2.isColliding = true;
             }
         }
     }
+
+    let obj
+    for (let i = 0; i < gameObjects.length; i++) {
+        obj = gameObjects[i]
+        if (obj.x + obj.width > canvasWidth || obj.x < 0) {
+            obj.vx = -obj.vx
+        }
+        if (obj.y + obj.height > canvasHeight || obj.y < 0) {
+            obj.vy = -obj.vy
+        }
+    }
+
+    return gameObjects
+
+
 }
 
+function checkKey(e) {
+    e = e || window.event;
+
+    // left
+    if (e.keyCode == LEFT_KEY) {
+        if (paddle.x > 0) { paddle.vx -= 20 }
+    }
+    // right
+    else if (e.keyCode == RIGHT_KEY) {
+        if (paddle.x + paddle.width < canvasWidth) { paddle.vx += 20 }
+    }
+
+}
+
+// throw new Error(`Muahahha`)
 init()
-createWorld()
+
+
+paddle = new Paddle(context, canvasWidth / 2, canvasHeight - 20, 0, 0)
+
+gameObjects = [
+    new Square(context, 0, 0, 0, 0),
+    new Square(context, 250, 50, 0, 25),
+    new Square(context, 250, 300, 0, -25),
+    new Square(context, 150, 0, 5, 5),
+    new Square(context, 250, 150, 5, 25),
+    new Square(context, 350, 75, -5, 25),
+    new Square(context, 300, 300, 5, -5),
+    paddle
+];
+
